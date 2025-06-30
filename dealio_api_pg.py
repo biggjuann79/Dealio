@@ -1,8 +1,58 @@
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from postgres_db import fetch_top_deals, init_db
+import psycopg2
+import os
 
+# -----------------------------------
+# Database Functions
+# -----------------------------------
+def get_connection():
+    return psycopg2.connect(os.getenv("DATABASE_URL"))
+
+def init_db():
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS listings (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    price REAL NOT NULL,
+                    category TEXT,
+                    deal_score REAL,
+                    location TEXT,
+                    url TEXT,
+                    image_urls TEXT[],
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                )
+            """)
+            conn.commit()
+
+def fetch_top_deals(limit: int = 20, min_score: float = 70.0):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, title, price, category, deal_score, location, url, image_urls, created_at FROM listings WHERE deal_score >= %s ORDER BY deal_score DESC LIMIT %s",
+                (min_score, limit)
+            )
+            rows = cur.fetchall()
+            deals = []
+            for row in rows:
+                deals.append({
+                    "id": row[0],
+                    "title": row[1],
+                    "price": row[2],
+                    "category": row[3],
+                    "deal_score": row[4],
+                    "location": row[5],
+                    "url": row[6],
+                    "image_urls": row[7],
+                    "created_at": row[8].isoformat() if row[8] else None
+                })
+            return deals
+
+# -----------------------------------
+# FastAPI App Setup
+# -----------------------------------
 app = FastAPI(
     title="Dealio API",
     description="API to serve top deals scraped from Craigslist with eBay comparison",
@@ -37,16 +87,13 @@ def get_deals(limit: int = 20, min_score: float = 70.0):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-from postgres_db import get_connection
-
 @app.get("/debug/db")
 def debug_db():
     try:
-        conn = get_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT NOW()")
-        now = cur.fetchone()[0]
-        conn.close()
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT NOW()")
+                now = cur.fetchone()[0]
         return {"status": "connected", "timestamp": now}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
