@@ -41,6 +41,8 @@ def save_listing(listing):
     conn.commit()
     cur.close()
     conn.close()
+    def save_listing(listing) 
+    print(f"Saved listing: {listing['id']}")
 
 
 def fetch_top_deals(limit=20, min_score=70.0):
