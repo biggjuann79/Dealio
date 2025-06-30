@@ -8,7 +8,7 @@ HEADERS = {
 
 CITIES = [
     "newyork", "losangeles", "chicago", "houston", "phoenix",
-    "philadelphia", "sanantonio", "sandiego", "dallas", "sanjose"
+    "philadelphia", "sanantonio", "miami", "dallas", "sanjose"
 ]
 
 def scrape_search_page(city):
