@@ -41,7 +41,6 @@ def save_listing(listing):
     conn.commit()
     cur.close()
     conn.close()
-    def save_listing(listing) 
     print(f"Saved listing: {listing['id']}")
 
 
