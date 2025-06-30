@@ -86,7 +86,7 @@ def get_deals(limit: int = 20, min_score: float = 70.0):
         return {"success": True, "data": results, "count": len(results)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+        
 @app.get("/debug/db")
 def debug_db():
     try:
