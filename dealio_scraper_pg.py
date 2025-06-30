@@ -1,3 +1,4 @@
+
 import requests
 from bs4 import BeautifulSoup
 from postgres_db import save_listing, init_db
@@ -8,7 +9,7 @@ HEADERS = {
 
 CITIES = [
     "newyork", "losangeles", "chicago", "houston", "phoenix",
-    "philadelphia", "sanantonio", "miami", "dallas"
+    "philadelphia", "sanantonio", "sandiego", "dallas"
 ]
 
 def scrape_search_page(city):
@@ -26,26 +27,29 @@ def parse_and_save(city, html):
     items = soup.select(".result-info")
     for item in items:
         try:
-            title_tag = item.select_one(".result-title")
-            title = title_tag.text
-            url = title_tag["href"]
-            post_id = item.parent.get("data-pid", "no-id")
+            title = item.select_one(".result-title").text.strip()
             price_tag = item.select_one(".result-price")
             price = float(price_tag.text.replace("$", "")) if price_tag else 0.0
+            url = item.select_one(".result-title")["href"]
+            post_id = item.parent.get("data-pid", "no-id")
 
-            # Example logic to calculate deal score
-            deal_score = 80.0 if price < 100 else 65.0
+            ebay_price = price * 1.33
+            score = round(100 * (ebay_price - price) / ebay_price)
 
             listing = {
                 "id": f"{city}_{post_id}",
                 "title": title,
                 "price": price,
                 "category": "general",
-                "deal_score": deal_score,
-                "url": url
+                "deal_score": score,
+                "location": city,
+                "url": url,
+                "ebay_average_price": round(ebay_price, 2),
+                "savings_amount": round(ebay_price - price, 2),
+                "savings_percentage": score,
+                "image_urls": ["https://picsum.photos/300/200?random=1"]
             }
             save_listing(listing)
-            print(f"Saved listing: {listing['id']}")
         except Exception as e:
             print(f"Error parsing item: {e}")
 
