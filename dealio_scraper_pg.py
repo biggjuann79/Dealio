@@ -8,7 +8,7 @@ HEADERS = {
 
 CITIES = [
     "newyork", "losangeles", "chicago", "houston", "phoenix",
-    "philadelphia", "sanantonio", "sandiego", "dallas", "sanjose"
+    "philadelphia", "sanantonio", "sandiego", "dallas", "miami"
 ]
 
 def scrape_search_page(city):
@@ -37,7 +37,7 @@ def parse_and_save(city, html):
                 "title": title,
                 "price": price,
                 "category": "general",
-                "deal_score": 0.0
+                "deal_score": 80.0
             }
             save_listing(listing)
         except Exception as e:
