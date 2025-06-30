@@ -2,13 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 from postgres_db import save_listing, init_db
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0"
-}
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 
 CITIES = [
     "newyork", "losangeles", "chicago", "houston", "phoenix",
-    "philadelphia", "sanantonio", "sandiego", "dallas", "miami"
+    "philadelphia", "sanantonio", "sandiego", "dallas", "sanjose"
 ]
 
 def scrape_search_page(city):
@@ -32,21 +30,37 @@ def parse_and_save(city, html):
             url = item.select_one(".result-title")["href"]
             post_id = item.parent.get("data-pid", "no-id")
 
+            # Sample eBay comparison (hardcoded for now)
+            ebay_avg = round(price * 1.2, 2)
+            savings = round(ebay_avg - price, 2)
+            percent = round((savings / ebay_avg) * 100, 1)
+
             listing = {
                 "id": f"{city}_{post_id}",
                 "title": title,
                 "price": price,
                 "category": "general",
-                "deal_score": 80.0
+                "deal_score": percent,
+                "brand": None,
+                "condition": None,
+                "location": city.title(),
+                "deal_score": percent,
+                "ebay_average_price": ebay_avg,
+                "savings_amount": savings,
+                "savings_percentage": percent,
+                "image_urls": [f"https://picsum.photos/300/200?random={post_id[-2:]}"],
+                "url": url
             }
+
             save_listing(listing)
+            print(f"✅ Saved: {title} for ${price} (score {percent})")
         except Exception as e:
-            print(f"Error parsing item: {e}")
+            print(f"❌ Error parsing item: {e}")
 
 def run_scraper():
     init_db()
     for city in CITIES:
-        print(f"Scraping: {city}")
+        print(f"🌎 Scraping: {city}")
         html = scrape_search_page(city)
         if html:
             parse_and_save(city, html)
